@@ -1,8 +1,9 @@
 package com.thegamesquid.tivoli.eventstore
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{Actor, ActorLogging, Props}
 import akka.io.Tcp
-import com.thegamesquid.tivoli.eventstore.model.{ EIFMessage }
+import com.thegamesquid.tivoli.eventstore.actor.EventMessageHandler
+import com.thegamesquid.tivoli.eventstore.actor.EventMessageHandler._
 
 class ConnectionHandler extends Actor with ActorLogging {
 
@@ -15,15 +16,15 @@ class ConnectionHandler extends Actor with ActorLogging {
 
       val decoded = data.decodeString("UTF-8").trim
 
-      val message: Option[EIFMessage] = decoded.startsWith("<START>>") && decoded.endsWith("END") match {
-        case true => Some(EIFMessage(decoded))
+      decoded.startsWith("<START>>") && decoded.endsWith("END") match {
+        case true => {
+          log.info("Sending message to EventMessageHandler")
+          context.system.actorOf(Props[EventMessageHandler]) ! EventMessageRequest(decoded)
+        }
         case false => {
           log.warning("Invalid message received: " + decoded)
-          None
         }
       }
-
-      val messageG = message.getOrElse()
     }
 
     case PeerClosed => {
