@@ -1,8 +1,7 @@
-package com.thegamesquid.tivoli.eventstore
+package com.thegamesquid.tivoli.eventstore.actor
 
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.io.Tcp
-import com.thegamesquid.tivoli.eventstore.actor.EventMessageHandler
 import com.thegamesquid.tivoli.eventstore.actor.EventMessageHandler._
 
 class ConnectionHandler extends Actor with ActorLogging {

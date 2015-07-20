@@ -1,6 +1,7 @@
-package com.thegamesquid.tivoli.eventstore
+package com.thegamesquid.tivoli.eventstore.actor
 
 import java.net.InetSocketAddress
+
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.io.{IO, Tcp}
 
