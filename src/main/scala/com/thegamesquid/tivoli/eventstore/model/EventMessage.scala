@@ -7,6 +7,7 @@ import scala.util.{ Failure, Success, Try }
 
 case class EventMessage (
   hostname: String,
+  agentType: String,
   situationName: String,
   situationStatus: String,
   integrationType: String,
@@ -17,25 +18,21 @@ case class EventMessage (
 
 object EventMessage {
   def apply(eifString: String) = {
-    val eifMessage = ParseMessage(eifString)
-    val eifDetails = ParseMessageDetails(eifMessage("SITUATION_EVENTDATA"))
-    val hostname = eifMessage("HOSTNAME")
-    val situationName = eifMessage("SITUATION_NAME")
-    val situationStatus = eifMessage("SITUATION_STATUS")
-    val integrationType = eifMessage("INTEGRATION_TYPE")
-    val timeStamp = getTimestamp(eifMessage("SITUATION_TIME"))
+    val eifMessage = parseMessage(eifString)
+    val eifDetails = parseMessageDetails(eifMessage("SITUATION_EVENTDATA"))
     new EventMessage(
-      hostname,
-      situationName,
-      situationStatus,
-      integrationType,
-      timeStamp.orNull, // TODO: Clean this up
+      getHostname(eifMessage("SITUATION_ORIGIN")),
+      getAgentType(eifMessage("SITUATION_ORIGIN")),
+      eifMessage("SITUATION_NAME"),
+      eifMessage("SITUATION_STATUS"),
+      eifMessage("INTEGRATION_TYPE"),
+      getTimestamp(eifMessage("SITUATION_TIME")).orNull, // TODO: Clean this up
       eifMessage.filter(t => t._1 != "SITUATION_EVENTDATA"),
       eifDetails
     )
   }
 
-  private def ParseMessage(eifString: String) = {
+  private def parseMessage(eifString: String) = {
     val messagePattern = "([A-z0-9]+?='(.*?'))".r
     messagePattern.findAllIn(eifString)                                     // Find all matching patterns as defined by messagePattern
               .toList                                                       // Change the resultset to a List
@@ -43,7 +40,7 @@ object EventMessage {
               .map(a => (a(0).toUpperCase, a(1).replace("'", ""))).toMap    // Map to an Array of Tuple2s
   }
 
-  private def ParseMessageDetails(eifDetailString: String) = {
+  private def parseMessageDetails(eifDetailString: String) = {
     val messagePattern = "([^;]+?=([^;]*)+)".r
     messagePattern.findAllIn(eifDetailString)                               // Find all matching patterns as defined by messagePattern
               .toList                                                       // Change the resultset to a List
@@ -51,7 +48,7 @@ object EventMessage {
               .map(a => (a(0).toUpperCase, a(1).replace("'", ""))).toMap    // Map to an Array of Tuple2s
   }
 
-  private def getTimestamp(s: String) : Option[Timestamp] = {
+  private def getTimestamp(s: String): Option[Timestamp] = {
     s match {
       case "" => None
       case _ => {
@@ -62,5 +59,17 @@ object EventMessage {
         }
       }
     }
+  }
+
+  private def getHostname(s: String): String = {
+    val hostPattern = """(?:Primary:)?([A-z0-9]*):(?:[A-z0-9])*""".r
+    val Some(reg) = hostPattern.findFirstMatchIn(s)
+    reg.group(1)
+  }
+
+  private def getAgentType(s: String): String = {
+    val agentPattern = """(?:Primary:)?(?:[A-z0-9]*):([A-z0-9]*)""".r
+    val Some(reg) = agentPattern.findFirstMatchIn(s)
+    reg.group(1)
   }
 }
