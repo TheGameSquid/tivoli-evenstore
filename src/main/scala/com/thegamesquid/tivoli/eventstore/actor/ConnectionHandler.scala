@@ -13,7 +13,7 @@ class ConnectionHandler extends Actor with ActorLogging {
       log.info("Data received! " + data)
       log.info("Date received! " + data.decodeString("UTF-8"))
 
-      val decoded = data.decodeString("UTF-8").trim.
+      val decoded = data.decodeString("UTF-8").trim
 
       decoded.startsWith("<START>>") && decoded.endsWith("END") match {
         case true => {
